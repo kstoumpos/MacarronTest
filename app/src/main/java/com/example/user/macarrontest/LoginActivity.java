@@ -30,6 +30,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.github.nitram509.jmacaroons.Macaroon;
+import com.github.nitram509.jmacaroons.MacaroonsBuilder;
+import com.github.nitram509.jmacaroons.MacaroonsVerifier;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,6 +66,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+
+    String location = "http://hascode";
+    String secretKey = "thisisaverysecretsecretsecretkeythisisaverysecretsecretsecretkey";
+    String identifier = "hascode-authentication";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -303,11 +311,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         UserLoginTask(String email, String password) {
             mEmail = email;
+            Log.i("email", mEmail);
             mPassword = password;
+            Log.i("password", mPassword);
             mCredentials = email + password;
             Log.i("mCredentials", mCredentials);
-            BaseMacaroonExample baseMacaroonExample = new BaseMacaroonExample();
-//            baseMacaroonExample(mCredentials);
+
         }
 
         @Override
@@ -330,7 +339,28 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
 
             // TODO: register the new account here.
+            // create macaroon
+            Macaroon macaroon = MacaroonsBuilder.create(location, secretKey, identifier);
+            printInfo(macaroon);
+            String serialized = macaroon.serialize();
+
+            // deserialize macaroon
+            Macaroon deserialize = MacaroonsBuilder.deserialize(serialized);
+            printInfo(deserialize);
+
+            // verify macaroon
+            MacaroonsVerifier verifier = new MacaroonsVerifier(macaroon);
+            System.out.printf("macaroon with id '%s' is valid: %s\n", macaroon.identifier,
+                    verifier.isValid(secretKey));
+
             return true;
+        }
+
+        private void printInfo(Macaroon macaroon) {
+            System.out.println("-----------------------------------\n");
+            System.out.printf("-- Human readable:\n%s\n", macaroon.inspect());
+            System.out.printf("-- Serialized (Base64 URL safe):\n%s\n", macaroon.serialize());
+            System.out.println("-----------------------------------\n");
         }
 
         @Override
